@@ -28,3 +28,4 @@ jobs:
           repository: '2dust/v2rayN'
           latest: true
           fileName: 'v2rayN-windows-64.zip'
+          out-file-path: ${{ github.workspace }}
