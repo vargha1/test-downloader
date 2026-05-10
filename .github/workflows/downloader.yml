@@ -29,3 +29,11 @@ jobs:
           latest: true
           fileName: 'v2rayN-windows-64.zip'
           out-file-path: ${{ github.workspace }}
+      - uses: actions/checkout@v4
+      - name: Add downloaded file to git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add v2rayN-windows-64.zip
+          git commit -m "Add v2rayN-windows-64.zip" || echo "No changes to commit"
+          git push
