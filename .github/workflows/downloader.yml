@@ -1,40 +1,26 @@
-# This is a basic workflow to help you get started with Actions
-
-name: CI
-
-# Controls when the workflow will run
+name: Download release and commit
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+  workflow_dispatch: {}
+permissions:
+  contents: write
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+  commit-release-asset:
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: robinraju/release-downloader@v1
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Download latest release asset
+        uses: robinraju/release-downloader@v1
         with:
-          repository: '2dust/v2rayN'
+          repository: 2dust/v2rayN
           latest: true
-          fileName: 'v2rayN-windows-64.zip'
+          fileName: v2rayN-windows-64.zip
           out-file-path: ${{ github.workspace }}
-      - uses: actions/checkout@v4
-      - name: Add downloaded file to git
+      - name: Commit and push
         run: |
-          cd /home/runner/work/test-downloader/test-downloader/
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git status
           git add v2rayN-windows-64.zip
-          git commit -m "Add v2rayN-windows-64.zip" || echo "No changes to commit"
+          git commit -m "Add v2rayN-windows-64.zip (latest release)" || exit 0
           git push
