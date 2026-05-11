@@ -1,0 +1,70 @@
+name: Scrape Pornhub Video Links
+on:
+  workflow_dispatch:
+    inputs:
+      page_url:
+        description: 'Pornhub Page URL (e.g., https://www.pornhub.com/ for homepage)'
+        required: true
+        default: 'https://www.pornhub.com/'
+        type: string
+      max_links:
+        description: 'Maximum number of links to extract (to avoid overload)'
+        required: false
+        default: '20'
+        type: number
+jobs:
+  scrape-links:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install Dependencies
+        run: |
+          pip install requests beautifulsoup4
+      - name: Scrape and Extract Video Links
+        run: |
+          python - <<EOF
+          import requests
+          from bs4 import BeautifulSoup
+          import sys
+          url = "${{ inputs.page_url }}"
+          max_links = int("${{ inputs.max_links }}")
+          headers = {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+          }
+          try:
+              response = requests.get(url, headers=headers, timeout=10)
+              response.raise_for_status()
+          except requests.exceptions.RequestException as e:
+              print(f"Error fetching page: {e}")
+              sys.exit(1)
+          soup = BeautifulSoup(response.text, 'html.parser')
+          video_links = []
+          for a in soup.find_all('a', href=True):
+              href = a['href']
+              if '/view_video.php?viewkey=' in href:
+                  full_link = 'https://www.pornhub.com' + href if href.startswith('/') else href
+                  video_links.append(full_link)
+                  if len(video_links) >= max_links:
+                      break
+            if not video_links:
+              print("No video links found. Site structure may have changed.")
+              sys.exit(1)
+            with open('video_links.txt', 'w') as f:
+              for link in video_links:
+                  f.write(link + '\n')
+            print(f"Extracted {len(video_links)} links. Saved to video_links.txt")
+          EOF
+      - name: Upload Links as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pornhub-video-links
+          path: video_links.txt
+      - name: Debug on Failure
+        if: failure()
+        run: |
+          echo "Scraping failed. Check logs for details (e.g., site blocks or parsing errors)."
