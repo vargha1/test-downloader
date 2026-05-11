@@ -27,7 +27,7 @@ jobs:
       - name: Download Video
         run: |
           yt-dlp --version
-          yt-dlp --no-playlist --format best "${{ inputs.video_url }}" -o "downloaded_video.%(ext)s"
+          yt-dlp --no-playlist --format best -f 'bestvideo[height<=480]+bestaudio/best[height<=480]' "${{ inputs.video_url }}" -o "downloaded_video.%(ext)s"
       - name: Track Large File with LFS
         run: |
           git lfs track "*.mp4"
