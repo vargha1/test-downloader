@@ -27,8 +27,6 @@ jobs:
       - name: Download Video
         run: |
           yt-dlp --no-playlist --format best "${{ inputs.video_url }}" -o "downloaded_video.%(ext)s"
-          # Rename to a fixed name for simplicity (adjust if needed)
-          mv downloaded_video.* downloaded_video.mp4
       - name: Track Large File with LFS
         run: |
           git lfs track "*.mp4"
