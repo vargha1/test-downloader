@@ -36,6 +36,7 @@ jobs:
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
+          git pull
           git add downloaded_video.mp4
           git commit -m "Add downloaded video from ${{ inputs.video_url }} via Actions"
           git push origin HEAD:${{ github.ref_name }}  # Push to the current branch
