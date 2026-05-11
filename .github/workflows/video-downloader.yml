@@ -26,6 +26,7 @@ jobs:
           git lfs install
       - name: Download Video
         run: |
+          yt-dlp --version
           yt-dlp --no-playlist --format best "${{ inputs.video_url }}" -o "downloaded_video.%(ext)s"
       - name: Track Large File with LFS
         run: |
