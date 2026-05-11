@@ -67,8 +67,8 @@ jobs:
               if not driver:
                 print("Failed to initialize browser.")
                 sys.exit(1)
-            soup = BeautifulSoup(driver.page_source, 'html.parser')
-            driver.quit()
+          soup = BeautifulSoup(driver.page_source, 'html.parser')
+          driver.quit()
           video_links = []
           for a in soup.find_all('a', href=True):
             href = a['href']
