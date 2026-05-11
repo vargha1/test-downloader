@@ -31,29 +31,36 @@ jobs:
           import requests
           from bs4 import BeautifulSoup
           import sys
+          import time
           url = "${{ inputs.page_url }}"
           max_links = int("${{ inputs.max_links }}")
           headers = {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+              'Referer': 'https://www.google.com/'
           }
-          try:
-              response = requests.get(url, headers=headers, timeout=10)
-              response.raise_for_status()
-          except requests.exceptions.RequestException as e:
-              print(f"Error fetching page: {e}")
-              sys.exit(1)
+          for attempt in range(3):  # Simple retry loop
+            try:
+                time.sleep(2)  # Delay to mimic human access
+                response = requests.get(url, headers=headers, timeout=10)
+                response.raise_for_status()
+                break
+            except requests.exceptions.RequestException as e:
+                print(f"Attempt {attempt+1} failed: {e}")
+                if attempt == 2:
+                    sys.exit(1)
           soup = BeautifulSoup(response.text, 'html.parser')
           video_links = []
           for a in soup.find_all('a', href=True):
-              href = a['href']
-              if '/view_video.php?viewkey=' in href:
-                  full_link = 'https://www.pornhub.com' + href if href.startswith('/') else href
-                  video_links.append(full_link)
-                  if len(video_links) >= max_links:
-                      break
-              if not video_links:
-                print("No video links found. Site structure may have changed.")
-                sys.exit(1)
+            href = a['href']
+            if '/view_video.php?viewkey=' in href:
+              full_link = 'https://www.pornhub.com' + href if href.startswith('/') else href
+              video_links.append(full_link)
+              if len(video_links) >= max_links:
+                break
+            if not video_links:
+              print("No video links found. Site structure may have changed.")
+              sys.exit(1)
           with open('video_links.txt', 'w') as f:
             for link in video_links:
               f.write(link + '\n')
