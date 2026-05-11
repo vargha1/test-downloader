@@ -1,4 +1,4 @@
-name: Scrape Pornhub Video Links
+name: Scrape Pornhub Video Links with Selenium
 on:
   workflow_dispatch:
     inputs:
@@ -8,13 +8,13 @@ on:
         default: 'https://www.pornhub.com/'
         type: string
       max_links:
-        description: 'Maximum number of links to extract (to avoid overload)'
+        description: 'Maximum number of links to extract'
         required: false
         default: '20'
         type: number
 jobs:
   scrape-links:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -24,32 +24,50 @@ jobs:
           python-version: '3.x'
       - name: Install Dependencies
         run: |
-          pip install requests beautifulsoup4
-      - name: Scrape and Extract Video Links
+          pip install selenium beautifulsoup4
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable  # Install Chrome browser          wget https://chromedriver.storage.googleapis.com/$(curl -s https://chromedriver.storage.googleapis.com/LATEST_RELEASE)/chromedriver_linux64.zip
+          unzip chromedriver_linux64.zip
+          sudo mv chromedriver /usr/local/bin/
+          sudo chmod +x /usr/local/bin/chromedriver
+      - name: Scrape and Extract Video Links with Selenium
         run: |
           python - <<EOF
-          import requests
+          from selenium import webdriver
+          from selenium.webdriver.chrome.options import Options
+          from selenium.webdriver.chrome.service import Service
+          from selenium.webdriver.common.by import By
+          from selenium.common.exceptions import TimeoutException, WebDriverException
           from bs4 import BeautifulSoup
           import sys
           import time
           url = "${{ inputs.page_url }}"
           max_links = int("${{ inputs.max_links }}")
-          headers = {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-              'Referer': 'https://www.google.com/'
-          }
+          options = Options()
+          options.add_argument('--headless')
+          options.add_argument('--no-sandbox')
+          options.add_argument('--disable-dev-shm-usage')
+          options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36')
+          service = Service('/usr/local/bin/chromedriver')
+          driver = None
           for attempt in range(3):  # Simple retry loop
             try:
-                time.sleep(2)  # Delay to mimic human access
-                response = requests.get(url, headers=headers, timeout=10)
-                response.raise_for_status()
-                break
-            except requests.exceptions.RequestException as e:
-                print(f"Attempt {attempt+1} failed: {e}")
-                if attempt == 2:
-                    sys.exit(1)
-          soup = BeautifulSoup(response.text, 'html.parser')
+              driver = webdriver.Chrome(service=service, options=options)
+              driver.set_page_load_timeout(30)
+              driver.get(url)
+              time.sleep(5)  # Wait for JS to load (adjust as needed)
+              break
+            except (TimeoutException, WebDriverException) as e:
+              print(f"Attempt {attempt+1} failed: {e}")
+              if driver:
+                  driver.quit()
+              if attempt == 2:
+                  sys.exit(1)
+              if not driver:
+                print("Failed to initialize browser.")
+                sys.exit(1)
+            soup = BeautifulSoup(driver.page_source, 'html.parser')
+            driver.quit()
           video_links = []
           for a in soup.find_all('a', href=True):
             href = a['href']
@@ -58,15 +76,16 @@ jobs:
               video_links.append(full_link)
               if len(video_links) >= max_links:
                 break
-            if not video_links:
-              print("No video links found. Site structure may have changed.")
-              sys.exit(1)
+          if not video_links:
+            print("No video links found. Site structure may have changed or access blocked.")
+            sys.exit(1)
           with open('video_links.txt', 'w') as f:
             for link in video_links:
               f.write(link + '\n')
           print(f"Extracted {len(video_links)} links. Saved to video_links.txt")
           EOF
       - name: Upload Links as Artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: pornhub-video-links
@@ -74,4 +93,4 @@ jobs:
       - name: Debug on Failure
         if: failure()
         run: |
-          echo "Scraping failed. Check logs for details (e.g., site blocks or parsing errors)."
+          echo "Scraping failed. Possible block—check for CAPTCHAs, enhance options (e.g., add cookies), or test locally."
