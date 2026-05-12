@@ -16,21 +16,21 @@ jobs:
     - name: Configure LFS
       run: |
         git lfs install --local
-        git lfs track "v2rayN-windows-64.zip"
+        git lfs track "cf-scanner_Linux_arm64.tar.gz"
         git add .gitattributes || true
     - name: Download latest release asset
       uses: robinraju/release-downloader@v1
       with:
-        repository: 2dust/v2rayN
+        repository: radioactiveAHM/cf-scanner
         latest: true
-        fileName: v2rayN-windows-64.zip
+        fileName: cf-scanner_Linux_arm64.tar.gz
         out-file-path: ${{ github.workspace }}
     - name: Commit and push
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        git add v2rayN-windows-64.zip .gitattributes
-        git commit -m "Add v2rayN-windows-64.zip (latest release)" || echo "No changes"
+        git add cf-scanner_Linux_arm64.tar.gz .gitattributes
+        git commit -m "Add cf-scanner_Linux_arm64.tar.gz (latest release)" || echo "No changes"
         git push
       env:
         GIT_LFS_SKIP_SMUDGE: "0"
