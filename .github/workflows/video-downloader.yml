@@ -18,10 +18,13 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
+      - name: Install system dependencies for curl_cffi
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential python3-dev libffi-dev libssl-dev
       - name: Install yt-dlp and Git LFS
         run: |
           pip install --upgrade yt-dlp curl_cffi
-          sudo apt-get update
           sudo apt-get install -y git-lfs
           git lfs install
       - name: Download Video
