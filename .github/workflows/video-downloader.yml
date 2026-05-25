@@ -20,7 +20,7 @@ jobs:
           python-version: '3.x'
       - name: Install yt-dlp and Git LFS
         run: |
-          pip install yt-dlp
+          pip install yt-dlp curl_cffi
           sudo apt-get update
           sudo apt-get install -y git-lfs
           git lfs install
